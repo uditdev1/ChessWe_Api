@@ -8,3 +8,14 @@ Welcome to the Chess Web App! This project is a real-time multiplayer chess game
 
 ## Front-end 
 [Front-end](https://github.com/uditdev1/ChessWe_client)
+
+## Environment Variables
+
+Create a `.env` file in the root folder and add the following:
+
+SMTP_HOST=
+SMTP_PORT=
+SMTP_MAIL=
+SMTP_PASSWORD=
+GEMINI_API_KEY=
+SEND_MAIL_TO=
