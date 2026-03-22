@@ -162,25 +162,25 @@ export class GameManager {
                 if (game) {
                     game.makeMove(socket, message.payload.move);
 
-                    const gemini = new Gemini(process.env.API_GEMINI_AI,  {
-                        model: "gemini-1.5-pro-latest",
-                    });
-                    const getMoveFor = `You are playing a chess game as the competitor against another player. 
-                        It's your turn to make the best possible valid chess move.
-
-                        Here is the current game state in FEN format: ${JSON.stringify(game.board.fen())}.
-                        Here is the board array representation: ${JSON.stringify(game.board.board())}.
-
-                        respond using this schema :
-                        move : {
-                            form : string , // Starting square in algebraic notation (e.g., "e2").
-                            to : string // Destination square in algebraic notation (e.g., "e4").
-                        };
-                        Return move;
-                    `
-                    const response = await gemini.ask(getMoveFor);
-                    
                     try {
+                        const gemini = new Gemini(process.env.API_GEMINI_AI, {
+                            model: "gemini-2.0-flash",
+                        });
+                        const getMoveFor = `You are playing a chess game as the competitor against another player. 
+                            It's your turn to make the best possible valid chess move.
+
+                            Here is the current game state in FEN format: ${JSON.stringify(game.board.fen())}.
+                            Here is the board array representation: ${JSON.stringify(game.board.board())}.
+
+                            respond using this schema :
+                            move : {
+                                from : string , // Starting square in algebraic notation (e.g., "e2").
+                                to : string // Destination square in algebraic notation (e.g., "e4").
+                            };
+                            Return move;
+                        `
+                        const response = await gemini.ask(getMoveFor);
+                        
                         const cleanedResponse = response.replace(/```json|```/g, '').trim();
                         const parsedResponse = JSON.parse(cleanedResponse);
                         const move = parsedResponse.move;
@@ -197,13 +197,11 @@ export class GameManager {
                                     move
                                 }
                             }));
-                            
                         } else {
                             console.error("Invalid move format in the response.");
                         }
                     } catch (error) {
-                        console.error("Failed to parse response:", error.message);
-                        console.error("Raw response:", response);
+                        console.error("Failed to get AI move:", error.message);
                     }
 
                 } else {
@@ -333,9 +331,9 @@ export class GameManager {
                 const chess_str = JSON.stringify(message.board, null , 2);
                 const fen_coordinates = "a8b8c8d8e8f8g8h8/a7b7c7d7e7f7g7h7/a6b6c6d6e6f6g6h6/a5b5c5d5e5f5g5h5/a4b4c4d4e4f4g4h4/a3b3c3d3e3f3g3h3/a2b2c2d2e2f2g2h2/a1b1c1d1e1f1g1h1"
                 try {
-                    const gemini = new Gemini(process.env.API_GEMINI_AI,  {
-                        model: "gemini-v2",
-                    });
+                    // Using @google/generative-ai for ASK_FOR_HELP (more reliable and actively maintained)
+                    const genAI = new GoogleGenerativeAI(process.env.API_GEMINI_AI);
+                    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
                     const getMoveFor = `Hi Gemini,
 
@@ -369,7 +367,9 @@ export class GameManager {
                     
                     Please provide only the move in the specified format.`
 
-                    const response = await gemini.ask(getMoveFor);
+                    const result = await model.generateContent(getMoveFor);
+                    const response = result.response.text();
+
                     socket.send(JSON.stringify({
                         type : HELP_RECEIVED,
                         message : response
@@ -392,8 +392,8 @@ export class GameManager {
                 `
 
                 try {
-                    const gemini = new Gemini(process.env.API_GEMINI_AI,  {
-                        model: "gemini-1.5-pro-latest",
+                    const gemini = new Gemini(process.env.API_GEMINI_AI, {
+                        model: "gemini-2.0-flash",
                     });
                     const response = await gemini.ask(getMoveFor);
                     this.tips.push(response);
